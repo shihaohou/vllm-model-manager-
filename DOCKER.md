@@ -23,7 +23,7 @@ cp config/services.json.example config/services.json
 ### 2. 使用 Docker Compose 启动
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 这将启动两个服务：
@@ -38,19 +38,19 @@ docker-compose up -d
 
 ```bash
 # 查看所有服务日志
-docker-compose logs -f
+docker compose logs -f
 
 # 查看后端日志
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # 查看前端日志
-docker-compose logs -f frontend
+docker compose logs -f frontend
 ```
 
 ### 5. 停止服务
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ## 单独构建和运行
@@ -101,7 +101,7 @@ sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
 sudo systemctl restart docker
 ```
 
-### 修改 docker-compose.yml
+### 修改 docker compose.yml
 
 在后端服务中添加 GPU 支持：
 
@@ -135,7 +135,7 @@ services:
 
 ## 持久化数据
 
-如需持久化配置文件，在 docker-compose.yml 中已经配置了卷挂载：
+如需持久化配置文件，在 docker compose.yml 中已经配置了卷挂载：
 
 ```yaml
 volumes:
@@ -160,7 +160,7 @@ volumes:
 
 ### 前端无法连接后端
 
-检查 docker-compose.yml 中的 `NEXT_PUBLIC_API_URL` 环境变量：
+检查 docker compose.yml 中的 `NEXT_PUBLIC_API_URL` 环境变量：
 ```yaml
 environment:
   - NEXT_PUBLIC_API_URL=http://backend:9000
@@ -168,7 +168,7 @@ environment:
 
 ### 端口冲突
 
-修改 docker-compose.yml 中的端口映射：
+修改 docker compose.yml 中的端口映射：
 ```yaml
 ports:
   - "9001:9000"  # 使用不同的主机端口
@@ -184,17 +184,17 @@ chmod 644 config/services.json
 ### 查看容器状态
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ### 进入容器调试
 
 ```bash
 # 进入后端容器
-docker-compose exec backend sh
+docker compose exec backend sh
 
 # 进入前端容器
-docker-compose exec frontend sh
+docker compose exec frontend sh
 ```
 
 ## 生产部署建议
@@ -228,7 +228,7 @@ docker-compose exec frontend sh
    使用 Let's Encrypt 或其他 SSL 证书。
 
 4. **资源限制**
-   在 docker-compose.yml 中添加资源限制：
+   在 docker compose.yml 中添加资源限制：
    ```yaml
    deploy:
      resources:
