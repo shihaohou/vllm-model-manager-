@@ -11,18 +11,18 @@ const fetcher = async (url: string) => {
 
 export function useServices() {
   return useSWR<ServicesMap>('/api/services', fetcher, {
-    refreshInterval: 5000,
+    refreshInterval: 500,
   });
 }
 
 export function useGPU() {
   return useSWR<GPUInfo[]>('/api/gpu', fetcher, {
-    refreshInterval: 5000,
+    refreshInterval: 500,
   });
 }
 
 export function useSystemInfo() {
   return useSWR<SystemInfo>('/api/system', fetcher, {
-    refreshInterval: 5000,
+    refreshInterval: 500,
   });
 }

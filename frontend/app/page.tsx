@@ -63,7 +63,7 @@ export default function DashboardPage() {
             vLLM MODEL MANAGER
           </h1>
           <p className="text-sm text-muted-foreground font-mono">
-            自动刷新间隔: 5秒
+            自动刷新间隔: 0.5秒
           </p>
         </div>
 

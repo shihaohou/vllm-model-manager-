@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: vllm-manager-backend
+    pid: "host"
     ports:
       - "9000:9000"
     volumes:
