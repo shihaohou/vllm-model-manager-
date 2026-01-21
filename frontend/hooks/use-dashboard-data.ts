@@ -1,5 +1,6 @@
 import useSWR from 'swr';
 import type { GPUInfo, ServicesMap, SystemInfo } from '@/lib/types';
+import { getApiUrl } from '@/lib/api-config';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -10,19 +11,19 @@ const fetcher = async (url: string) => {
 };
 
 export function useServices() {
-  return useSWR<ServicesMap>('/api/services', fetcher, {
+  return useSWR<ServicesMap>(getApiUrl('/api/services'), fetcher, {
     refreshInterval: 500,
   });
 }
 
 export function useGPU() {
-  return useSWR<GPUInfo[]>('/api/gpu', fetcher, {
+  return useSWR<GPUInfo[]>(getApiUrl('/api/gpu'), fetcher, {
     refreshInterval: 500,
   });
 }
 
 export function useSystemInfo() {
-  return useSWR<SystemInfo>('/api/system', fetcher, {
+  return useSWR<SystemInfo>(getApiUrl('/api/system'), fetcher, {
     refreshInterval: 500,
   });
 }

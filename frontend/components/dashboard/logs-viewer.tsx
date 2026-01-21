@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getApiUrl } from '@/lib/api-config';
 
 interface LogsViewerProps {
   serviceKey: string | null;
@@ -18,7 +19,7 @@ export function LogsViewer({ serviceKey, serviceName, isOpen, onClose }: LogsVie
   useEffect(() => {
     if (isOpen && serviceKey) {
       setIsLoading(true);
-      fetch(`/api/service/${serviceKey}/logs?lines=200`)
+      fetch(getApiUrl(`/api/service/${serviceKey}/logs?lines=200`))
         .then(res => res.json())
         .then(result => {
           if (result.success) {

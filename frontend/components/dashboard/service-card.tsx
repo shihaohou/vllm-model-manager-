@@ -8,6 +8,7 @@ import type { ServiceInfo } from '@/lib/types';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getApiUrl } from '@/lib/api-config';
 
 interface ServiceCardProps {
   serviceKey: string;
@@ -23,7 +24,7 @@ export function ServiceCard({ serviceKey, service, index, onViewLogs }: ServiceC
   const handleStart = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/service/${serviceKey}/start`, { method: 'POST' });
+      const response = await fetch(getApiUrl(`/api/service/${serviceKey}/start`), { method: 'POST' });
       const result = await response.json();
 
       if (result.success) {
@@ -41,7 +42,7 @@ export function ServiceCard({ serviceKey, service, index, onViewLogs }: ServiceC
   const handleStop = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/service/${serviceKey}/stop`, { method: 'POST' });
+      const response = await fetch(getApiUrl(`/api/service/${serviceKey}/stop`), { method: 'POST' });
       const result = await response.json();
 
       if (result.success) {
