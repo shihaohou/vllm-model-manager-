@@ -151,6 +151,11 @@ def index():
         'frontend': 'http://{}:3000'.format(request.host.split(':')[0])
     })
 
+def save_services_config():
+    """保存服务配置到文件"""
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(SERVICES, f, indent=4, ensure_ascii=False)
+
 @app.route('/api/services')
 def get_services():
     """获取所有服务状态"""
@@ -158,10 +163,12 @@ def get_services():
 
     for key, service in SERVICES.items():
         status = check_service_status(key)
+        default_params = service.get('default_params', {})
         services_status[key] = {
             'name': service['name'],
-            'port': service['port'],
-            'gpus': service.get('gpus', []),
+            'port': default_params.get('port', service.get('port', 8000)),
+            'gpus': default_params.get('gpus', service.get('gpus', [])),
+            'default_params': default_params,
             **status
         }
 
@@ -173,9 +180,54 @@ def get_gpu():
     gpu_info = get_gpu_info()
     return jsonify(gpu_info)
 
+@app.route('/api/service/<service_key>/config', methods=['GET'])
+def get_service_config(service_key):
+    """获取服务默认配置"""
+    if service_key not in SERVICES:
+        return jsonify({'success': False, 'message': '服务不存在'}), 404
+
+    service = SERVICES[service_key]
+    default_params = service.get('default_params', {
+        'gpus': service.get('gpus', [0]),
+        'port': service.get('port', 8000),
+        'tensor_parallel_size': 1,
+        'gpu_memory_utilization': 0.9,
+        'max_model_len': 4096,
+        'dtype': 'auto'
+    })
+
+    return jsonify({
+        'success': True,
+        'config': default_params,
+        'model_path': service.get('model_path', ''),
+        'extra_args': service.get('extra_args', '')
+    })
+
+@app.route('/api/service/<service_key>/config', methods=['POST'])
+def save_service_config(service_key):
+    """保存服务默认配置"""
+    if service_key not in SERVICES:
+        return jsonify({'success': False, 'message': '服务不存在'}), 404
+
+    data = request.get_json() or {}
+    params = data.get('params', {})
+
+    if params:
+        SERVICES[service_key]['default_params'] = {
+            'gpus': params.get('gpus', [0]),
+            'port': params.get('port', 8000),
+            'tensor_parallel_size': params.get('tensorParallelSize', params.get('tensor_parallel_size', 1)),
+            'gpu_memory_utilization': params.get('gpuUtil', params.get('gpu_memory_utilization', 0.9)),
+            'max_model_len': params.get('maxModelLen', params.get('max_model_len', 4096)),
+            'dtype': params.get('dtype', 'auto')
+        }
+        save_services_config()
+
+    return jsonify({'success': True, 'message': '配置已保存'})
+
 @app.route('/api/service/<service_key>/start', methods=['POST'])
 def start_service(service_key):
-    """启动服务"""
+    """启动服务（支持动态参数）"""
     if service_key not in SERVICES:
         return jsonify({'success': False, 'message': '服务不存在'}), 404
 
@@ -186,23 +238,121 @@ def start_service(service_key):
     if status['status'] == 'running':
         return jsonify({'success': False, 'message': '服务已在运行中'})
 
-    try:
-        # 执行启动脚本
-        result = subprocess.run(
-            ['bash', service['start_script']],
-            capture_output=True,
-            text=True,
-            timeout=300
-        )
+    # 获取请求参数，若无则使用默认参数
+    data = request.get_json() or {}
+    default_params = service.get('default_params', {})
 
-        if result.returncode == 0:
-            return jsonify({'success': True, 'message': '服务启动成功', 'output': result.stdout})
-        else:
-            return jsonify({'success': False, 'message': '服务启动失败', 'error': result.stderr})
-    except subprocess.TimeoutExpired:
-        return jsonify({'success': False, 'message': '启动超时'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+    # 参数验证
+    VALID_DTYPES = {'auto', 'float16', 'bfloat16', 'float32'}
+
+    gpus = data.get('gpus', default_params.get('gpus', [0]))
+    if not isinstance(gpus, list) or not all(isinstance(g, int) and 0 <= g < 16 for g in gpus):
+        return jsonify({'success': False, 'message': 'GPU参数无效'}), 400
+
+    port = int(data.get('port', default_params.get('port', 8000)))
+    if not (1024 <= port <= 65535):
+        return jsonify({'success': False, 'message': '端口范围无效 (1024-65535)'}), 400
+
+    tensor_parallel_size = int(data.get('tensorParallelSize', data.get('tensor_parallel_size', default_params.get('tensor_parallel_size', 1))))
+    if not (1 <= tensor_parallel_size <= 16):
+        return jsonify({'success': False, 'message': 'tensor_parallel_size 范围无效 (1-16)'}), 400
+
+    gpu_memory_utilization = float(data.get('gpuUtil', data.get('gpu_memory_utilization', default_params.get('gpu_memory_utilization', 0.9))))
+    if not (0.1 <= gpu_memory_utilization <= 1.0):
+        return jsonify({'success': False, 'message': 'gpu_memory_utilization 范围无效 (0.1-1.0)'}), 400
+
+    max_model_len = int(data.get('maxModelLen', data.get('max_model_len', default_params.get('max_model_len', 4096))))
+    if not (256 <= max_model_len <= 131072):
+        return jsonify({'success': False, 'message': 'max_model_len 范围无效 (256-131072)'}), 400
+
+    dtype = str(data.get('dtype', default_params.get('dtype', 'auto')))
+    if dtype not in VALID_DTYPES:
+        return jsonify({'success': False, 'message': f'dtype 无效，必须是 {VALID_DTYPES} 之一'}), 400
+
+    save_as_default = data.get('saveAsDefault', False)
+
+    # 保存为默认配置
+    if save_as_default:
+        SERVICES[service_key]['default_params'] = {
+            'gpus': gpus,
+            'port': port,
+            'tensor_parallel_size': tensor_parallel_size,
+            'gpu_memory_utilization': gpu_memory_utilization,
+            'max_model_len': max_model_len,
+            'dtype': dtype
+        }
+        save_services_config()
+
+    # 检查是否有model_path（新配置格式）
+    model_path = service.get('model_path')
+
+    if model_path:
+        # 动态构建vLLM启动命令
+        cuda_devices = ','.join(map(str, gpus))
+        log_file = service.get('log_file', f'/tmp/vllm_{service_key}.log')
+        extra_args = service.get('extra_args', '')
+
+        cmd = f'''
+source /root/miniconda3/etc/profile.d/conda.sh 2>/dev/null || true
+conda activate base 2>/dev/null || true
+mkdir -p $(dirname {log_file})
+CUDA_VISIBLE_DEVICES={cuda_devices} nohup vllm serve {model_path} \
+    --tensor-parallel-size {tensor_parallel_size} \
+    --port {port} \
+    --host 0.0.0.0 \
+    --gpu-memory-utilization {gpu_memory_utilization} \
+    --max-model-len {max_model_len} \
+    --dtype {dtype} \
+    {extra_args} \
+    > {log_file} 2>&1 &
+echo "服务启动中，日志: {log_file}"
+'''
+        try:
+            result = subprocess.run(
+                ['bash', '-c', cmd],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            return jsonify({
+                'success': True,
+                'message': '服务启动成功',
+                'output': result.stdout,
+                'params': {
+                    'gpus': gpus,
+                    'port': port,
+                    'tensor_parallel_size': tensor_parallel_size,
+                    'gpu_memory_utilization': gpu_memory_utilization,
+                    'max_model_len': max_model_len,
+                    'dtype': dtype
+                }
+            })
+        except subprocess.TimeoutExpired:
+            return jsonify({'success': True, 'message': '服务正在后台启动'})
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)})
+    else:
+        # 兼容旧配置：使用start_script
+        start_script = service.get('start_script')
+        if not start_script:
+            return jsonify({'success': False, 'message': '服务配置缺少 model_path 或 start_script'})
+
+        try:
+            result = subprocess.run(
+                ['bash', start_script],
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+
+            if result.returncode == 0:
+                return jsonify({'success': True, 'message': '服务启动成功', 'output': result.stdout})
+            else:
+                return jsonify({'success': False, 'message': '服务启动失败', 'error': result.stderr})
+        except subprocess.TimeoutExpired:
+            return jsonify({'success': False, 'message': '启动超时'})
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/api/service/<service_key>/stop', methods=['POST'])
 def stop_service(service_key):

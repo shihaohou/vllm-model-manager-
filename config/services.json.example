@@ -1,38 +1,64 @@
 {
     "qwen3": {
         "name": "Qwen3-Next-80B-A3B-Instruct",
-        "port": 8000,
-        "start_script": "/path/to/scripts/start_qwen3.sh",
-        "stop_script": "/path/to/scripts/stop_qwen3.sh",
+        "model_path": "/root/models/Qwen3-Next-80B-A3B-Instruct",
         "log_file": "/path/to/logs/vllm_qwen3.log",
         "process_pattern": "vllm serve.*Qwen3-Next-80B-A3B-Instruct",
-        "gpus": [1, 2, 3, 4]
+        "stop_script": "/path/to/scripts/stop_qwen3.sh",
+        "default_params": {
+            "gpus": [1, 2, 3, 4],
+            "port": 8000,
+            "tensor_parallel_size": 4,
+            "gpu_memory_utilization": 0.9,
+            "max_model_len": 8192,
+            "dtype": "auto"
+        }
     },
     "qwen3_thinking": {
         "name": "Qwen3-Next-80B-A3B-Thinking-FP8",
-        "port": 8001,
-        "start_script": "/path/to/scripts/start_qwen3_thinking.sh",
-        "stop_script": "/path/to/scripts/stop_qwen3_thinking.sh",
+        "model_path": "/root/models/Qwen3-Next-80B-A3B-Thinking-FP8",
         "log_file": "/path/to/logs/vllm_qwen3_thinking.log",
         "process_pattern": "vllm serve.*Qwen3-Next-80B-A3B-Thinking",
-        "gpus": [5, 6]
+        "stop_script": "/path/to/scripts/stop_qwen3_thinking.sh",
+        "default_params": {
+            "gpus": [5, 6],
+            "port": 8001,
+            "tensor_parallel_size": 2,
+            "gpu_memory_utilization": 0.9,
+            "max_model_len": 8192,
+            "dtype": "float16"
+        }
     },
     "qwen3_reranker": {
         "name": "Qwen3-Reranker-8B",
-        "port": 8012,
-        "start_script": "/path/to/scripts/start_qwen3_reranker.sh",
-        "stop_script": "/path/to/scripts/stop_qwen3_reranker.sh",
+        "model_path": "/root/models/qwen3-reranker/Qwen3-Reranker-8B",
         "log_file": "/path/to/logs/vllm_reranker.log",
         "process_pattern": "vllm serve.*Reranker",
-        "gpus": [0]
+        "stop_script": "/path/to/scripts/stop_qwen3_reranker.sh",
+        "extra_args": "--served-model-name Qwen3-Reranker-8B --hf_overrides '{\"architectures\": [\"Qwen3ForSequenceClassification\"],\"classifier_from_token\": [\"no\", \"yes\"],\"is_original_qwen3_reranker\": true}'",
+        "default_params": {
+            "gpus": [0],
+            "port": 8012,
+            "tensor_parallel_size": 1,
+            "gpu_memory_utilization": 0.4,
+            "max_model_len": 8192,
+            "dtype": "auto"
+        }
     },
     "paddleocr": {
         "name": "PaddleOCR-VL-0.9B",
-        "port": 8080,
-        "start_script": "/path/to/scripts/start_paddleocr_vl.sh",
-        "stop_script": "/path/to/scripts/stop_paddleocr.sh",
+        "model_path": "/root/models/PaddleOCR-VL",
         "log_file": "/path/to/logs/vllm_paddleocr.log",
         "process_pattern": "vllm serve.*PaddleOCR-VL",
-        "gpus": [0]
+        "stop_script": "/path/to/scripts/stop_paddleocr.sh",
+        "extra_args": "--served-model-name PaddleOCR-VL-0.9B --trust-remote-code --max-num-batched-tokens 16384 --no-enable-prefix-caching --mm-processor-cache-gb 0",
+        "default_params": {
+            "gpus": [0],
+            "port": 8080,
+            "tensor_parallel_size": 1,
+            "gpu_memory_utilization": 0.4,
+            "max_model_len": 4096,
+            "dtype": "auto"
+        }
     }
 }
