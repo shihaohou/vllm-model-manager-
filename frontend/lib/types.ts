@@ -9,6 +9,15 @@ export interface GPUInfo {
   power_limit: number;
 }
 
+export interface DefaultParams {
+  gpus: number[];
+  port: number;
+  tensor_parallel_size: number;
+  gpu_memory_utilization: number;
+  max_model_len: number;
+  dtype: string;
+}
+
 export interface ServiceInfo {
   name: string;
   port: number;
@@ -20,6 +29,17 @@ export interface ServiceInfo {
   gpu_memory_mb?: number;
   uptime?: string;
   message?: string;
+  default_params?: DefaultParams;
+}
+
+export interface StartConfig {
+  gpus: number[];
+  port: number;
+  tensorParallelSize: number;
+  gpuUtil: number;
+  maxModelLen: number;
+  dtype: string;
+  saveAsDefault: boolean;
 }
 
 export interface SystemInfo {
@@ -34,4 +54,9 @@ export interface SystemInfo {
 
 export interface ServicesMap {
   [key: string]: ServiceInfo;
+}
+
+export interface MetricPoint {
+  timestamp: string;
+  value: number;
 }

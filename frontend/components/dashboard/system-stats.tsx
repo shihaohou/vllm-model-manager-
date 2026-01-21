@@ -1,72 +1,77 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Cpu, MemoryStick, HardDrive } from 'lucide-react';
+import { Database, HardDrive } from 'lucide-react';
 import type { SystemInfo } from '@/lib/types';
-import { motion } from 'framer-motion';
+import { MetricRing } from './metric-ring';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SystemStatsProps {
-  info: SystemInfo;
+  info?: SystemInfo;
+  loading?: boolean;
 }
 
-export function SystemStats({ info }: SystemStatsProps) {
+export function SystemStats({ info, loading }: SystemStatsProps) {
+  if (loading || !info) {
+    return (
+      <div className="space-y-6 flex flex-col items-center">
+        <Skeleton className="h-32 w-32 rounded-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
+  }
+
   const stats = [
     {
-      icon: Cpu,
-      label: 'CPU 使用率',
-      value: info.cpu_percent,
-      unit: '%',
-      color: 'text-neon-cyan',
-    },
-    {
-      icon: MemoryStick,
-      label: '内存使用率',
+      labelCN: '内存',
       value: info.memory_percent,
-      unit: '%',
-      color: 'text-neon-magenta',
-      detail: `${info.memory_used_gb.toFixed(1)}GB / ${info.memory_total_gb.toFixed(1)}GB`,
+      detail: `${info.memory_used_gb.toFixed(0)}/${info.memory_total_gb.toFixed(0)} GB`,
+      icon: Database,
+      color: 'text-chart-2',
+      bgColor: 'bg-chart-2',
     },
     {
-      icon: HardDrive,
-      label: '磁盘使用率',
+      labelCN: '磁盘',
       value: info.disk_percent,
-      unit: '%',
-      color: 'text-neon-yellow',
-      detail: `${info.disk_used_gb.toFixed(0)}GB / ${info.disk_total_gb.toFixed(0)}GB`,
+      detail: `${info.disk_used_gb.toFixed(0)} GB 已用`,
+      icon: HardDrive,
+      color: 'text-chart-3',
+      bgColor: 'bg-chart-3',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {stats.map((stat, index) => (
-        <motion.div
-          key={stat.label}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
-        >
-          <Card className="glass neon-border-cyan hover:neon-border-magenta transition-all duration-300">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  <span className="text-xs text-muted-foreground">{stat.label}</span>
-                </div>
-                <span className={`text-lg font-bold font-mono ${stat.color}`}>
-                  {stat.value.toFixed(1)}{stat.unit}
-                </span>
+    <div className="flex flex-col gap-8 items-center">
+      <MetricRing
+        value={info.cpu_percent}
+        label="CPU"
+        size={140}
+        strokeWidth={10}
+        colorClass="text-chart-1"
+      />
+
+      <div className="w-full space-y-4">
+        {stats.map((stat) => (
+          <div key={stat.labelCN} className="bg-sidebar-accent/50 p-3 rounded-lg border border-sidebar-border/50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <stat.icon className="h-4 w-4" />
+                <span className="text-xs font-medium">{stat.labelCN}</span>
               </div>
-              <Progress value={stat.value} className="h-1.5 mb-2" aria-label={stat.label} />
-              {stat.detail && (
-                <p className="text-[10px] text-muted-foreground font-mono text-right">
-                  {stat.detail}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
+              <span className={`font-mono font-bold ${stat.color}`}>{stat.value.toFixed(0)}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-sidebar-border rounded-full overflow-hidden">
+              <div
+                className={`h-full ${stat.bgColor} transition-all duration-500`}
+                style={{ width: `${stat.value}%` }}
+              />
+            </div>
+            {stat.detail && (
+              <p className="text-[10px] text-right text-muted-foreground mt-1 font-mono">{stat.detail}</p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
