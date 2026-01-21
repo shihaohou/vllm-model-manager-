@@ -9,10 +9,14 @@ RUN npm ci
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Build argument for API URL
+ARG API_URL=http://localhost:9000
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV API_URL=${API_URL}
 RUN npm run build
 
 # Stage 3: Runner
