@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vllm-manager-backend
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./config:/app/config:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - HOST=0.0.0.0
+      - PORT=9000
+    restart: unless-stopped
+    networks:
+      - vllm-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/system"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vllm-manager-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:9000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - vllm-network
+
+networks:
+  vllm-network:
+    driver: bridge
