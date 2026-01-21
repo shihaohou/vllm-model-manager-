@@ -29,7 +29,7 @@ export function GPUCard({ gpu, index }: GPUCardProps) {
       transition={{ delay: index * 0.1 }}
     >
       <Card className="glass neon-border-cyan relative overflow-hidden group hover:neon-border-magenta transition-all duration-300">
-        <div className="absolute inset-0 bg-gradient-to-br from-neon-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-br from-neon-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-sm">

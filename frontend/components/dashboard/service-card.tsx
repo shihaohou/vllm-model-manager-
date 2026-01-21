@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Play, Square, FileText, Cpu, MemoryStick, HardDrive } from 'lucide-react';
 import type { ServiceInfo } from '@/lib/types';
-import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { getApiUrl } from '@/lib/api-config';
@@ -22,10 +21,12 @@ export function ServiceCard({ serviceKey, service, index, onViewLogs }: ServiceC
   const isRunning = service.status === 'running';
 
   const handleStart = async () => {
+    console.log('handleStart called for', serviceKey);
     setIsLoading(true);
     try {
       const response = await fetch(getApiUrl(`/api/service/${serviceKey}/start`), { method: 'POST' });
       const result = await response.json();
+      console.log('Start result:', result);
 
       if (result.success) {
         toast.success('服务启动成功');
@@ -33,6 +34,7 @@ export function ServiceCard({ serviceKey, service, index, onViewLogs }: ServiceC
         toast.error(`启动失败: ${result.message}`);
       }
     } catch (error) {
+      console.error('Start error:', error);
       toast.error(`启动失败: ${error instanceof Error ? error.message : '未知错误'}`);
     } finally {
       setIsLoading(false);
@@ -40,10 +42,12 @@ export function ServiceCard({ serviceKey, service, index, onViewLogs }: ServiceC
   };
 
   const handleStop = async () => {
+    console.log('handleStop called for', serviceKey);
     setIsLoading(true);
     try {
       const response = await fetch(getApiUrl(`/api/service/${serviceKey}/stop`), { method: 'POST' });
       const result = await response.json();
+      console.log('Stop result:', result);
 
       if (result.success) {
         toast.success('服务停止成功');
@@ -51,6 +55,7 @@ export function ServiceCard({ serviceKey, service, index, onViewLogs }: ServiceC
         toast.error(`停止失败: ${result.message}`);
       }
     } catch (error) {
+      console.error('Stop error:', error);
       toast.error(`停止失败: ${error instanceof Error ? error.message : '未知错误'}`);
     } finally {
       setIsLoading(false);
@@ -58,13 +63,9 @@ export function ServiceCard({ serviceKey, service, index, onViewLogs }: ServiceC
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-    >
+    <div>
       <Card className="glass relative overflow-hidden group hover:border-primary/50 transition-all duration-300">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -153,6 +154,6 @@ export function ServiceCard({ serviceKey, service, index, onViewLogs }: ServiceC
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }
