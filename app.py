@@ -136,8 +136,20 @@ def check_service_status(service_key):
 
 @app.route('/')
 def index():
-    """主页"""
-    return render_template('index.html')
+    """API信息"""
+    return jsonify({
+        'name': 'vLLM Model Manager API',
+        'version': '1.0.0',
+        'endpoints': {
+            'services': '/api/services',
+            'gpu': '/api/gpu',
+            'system': '/api/system',
+            'start': '/api/service/{service_key}/start',
+            'stop': '/api/service/{service_key}/stop',
+            'logs': '/api/service/{service_key}/logs'
+        },
+        'frontend': 'http://{}:3000'.format(request.host.split(':')[0])
+    })
 
 @app.route('/api/services')
 def get_services():
