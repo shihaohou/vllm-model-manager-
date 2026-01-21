@@ -1,0 +1,18 @@
+[Unit]
+Description=vLLM Model Manager Frontend
+After=network.target vllm-manager-backend.service
+Requires=vllm-manager-backend.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/vllm-model-manager/frontend/.next/standalone
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+Environment="HOSTNAME=0.0.0.0"
+ExecStart=/usr/bin/node /root/vllm-model-manager/frontend/.next/standalone/server.js
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

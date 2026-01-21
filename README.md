@@ -23,7 +23,7 @@
 - 💻 **系统资源** - 监控 CPU、内存、磁盘使用情况
 - 📝 **日志查看** - 在 Web 界面直接查看服务日志
 - 🎨 **现代化 UI** - 美观的渐变色界面，响应式设计
-- 🔄 **自动刷新** - 每 5 秒自动更新所有状态信息
+- 🔄 **自动刷新** - 每 0.5 秒自动更新所有状态信息
 - ⚙️ **灵活配置** - 通过 JSON 配置文件轻松管理多个服务
 
 ### 支持的功能
@@ -40,14 +40,22 @@
 ### 环境要求
 
 - Python 3.8+
+- Node.js 18+
 - NVIDIA GPU with CUDA
 - vLLM 已安装
 - nvidia-smi 可用
 
 ### 安装依赖
 
+后端依赖：
 ```bash
 pip install flask flask-cors psutil
+```
+
+前端依赖：
+```bash
+cd frontend
+npm ci
 ```
 
 ### 配置服务
@@ -74,22 +82,55 @@ cp config/services.json.example config/services.json
 }
 ```
 
+### 构建前端
+
+```bash
+cd frontend
+API_URL=http://localhost:9000 npm run build
+cd ..
+```
+
 ### 启动管理系统
 
+启动后端：
 ```bash
 python3 app.py
 ```
 
-默认访问地址: **http://0.0.0.0:9000**
-
-### 自定义端口和主机
-
+启动前端（新终端）：
 ```bash
-# 自定义端口
-PORT=8080 python3 app.py
+cd frontend/.next/standalone
+node server.js
+```
 
-# 自定义主机和端口
-HOST=127.0.0.1 PORT=8080 python3 app.py
+访问地址：
+- **前端界面**: http://localhost:3000
+- **后端 API**: http://localhost:9000
+
+### 使用 systemd 管理（推荐）
+
+安装服务：
+```bash
+# 复制服务文件到 systemd 目录
+sudo cp vllm-manager-backend.service /etc/systemd/system/
+sudo cp vllm-manager-frontend.service /etc/systemd/system/
+
+# 重新加载 systemd
+sudo systemctl daemon-reload
+
+# 启动服务
+sudo systemctl start vllm-manager-backend
+sudo systemctl start vllm-manager-frontend
+
+# 设置开机自启
+sudo systemctl enable vllm-manager-backend
+sudo systemctl enable vllm-manager-frontend
+```
+
+查看服务状态：
+```bash
+sudo systemctl status vllm-manager-backend
+sudo systemctl status vllm-manager-frontend
 ```
 
 ## 配置说明
@@ -271,48 +312,41 @@ GET /api/service/{service_key}/logs?lines=100
 
 ```
 vllm-model-manager/
-├── app.py                      # Flask 应用主程序
-├── templates/
-│   └── index.html             # Web 界面模板
-├── static/                    # 静态资源目录（预留）
+├── app.py                           # Flask 后端主程序
+├── frontend/                        # Next.js 前端应用
+│   ├── app/                        # Next.js App Router
+│   ├── components/                 # React 组件
+│   ├── hooks/                      # React Hooks
+│   ├── lib/                        # 工具函数
+│   └── package.json                # 前端依赖
 ├── config/
-│   ├── services.json          # 服务配置文件
-│   └── services.json.example  # 配置文件示例
-├── requirements.txt           # Python 依赖
-├── .gitignore                # Git 忽略文件
-├── LICENSE                   # 开源协议
-└── README.md                 # 项目文档
+│   ├── services.json               # 服务配置文件
+│   └── services.json.example       # 配置文件示例
+├── vllm-manager-backend.service    # 后端 systemd 服务文件
+├── vllm-manager-frontend.service   # 前端 systemd 服务文件
+├── requirements.txt                # Python 依赖
+├── .gitignore                      # Git 忽略文件
+├── LICENSE                         # 开源协议
+└── README.md                       # 项目文档
 ```
 
 ## 部署建议
 
-### 使用 systemd 管理
+### 生产环境部署
 
-创建 `/etc/systemd/system/vllm-manager.service`：
-
-```ini
-[Unit]
-Description=vLLM Model Manager
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/opt/vllm-model-manager
-Environment="PATH=/usr/local/bin:/usr/bin:/bin"
-ExecStart=/usr/bin/python3 /opt/vllm-model-manager/app.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
+1. **构建前端**：
+```bash
+cd frontend
+API_URL=http://your-server-ip:9000 npm run build
 ```
 
-启动服务：
+2. **配置 systemd 服务**：项目已包含服务文件 `vllm-manager-backend.service` 和 `vllm-manager-frontend.service`
+
+3. **安装并启动服务**：
 ```bash
+sudo cp vllm-manager-*.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable vllm-manager
-sudo systemctl start vllm-manager
+sudo systemctl enable --now vllm-manager-backend vllm-manager-frontend
 ```
 
 ### 使用 Nginx 反向代理
@@ -389,7 +423,6 @@ A: 可以！只需要提供对应的启动/停止脚本和进程识别模式即�
 
 ## 开发计划
 
-- [ ] 支持 Docker 部署
 - [ ] 添加用户认证系统
 - [ ] 性能图表和历史数据
 - [ ] 邮件/钉钉告警通知

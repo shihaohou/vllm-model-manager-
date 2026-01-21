@@ -1,0 +1,17 @@
+[Unit]
+Description=vLLM Model Manager Backend
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/vllm-model-manager
+Environment="HOST=0.0.0.0"
+Environment="PORT=9000"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/root/miniconda3/bin/python3 /root/vllm-model-manager/app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
