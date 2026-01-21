@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型服务管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .refresh-info {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9em;
+        }
+
+        .system-info {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .system-info h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .system-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .gpu-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .gpu-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .gpu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .gpu-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .gpu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .gpu-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .gpu-temp {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.2);
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .gpu-info {
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .service-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .service-info {
+            margin: 15px 0;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .service-info div {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-label {
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .service-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        .btn-stop {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+
+        .btn-logs {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-logs:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+        }
+
+        .close-btn {
+            font-size: 2em;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .logs-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.5em;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 模型服务管理系统</h1>
+            <p class="refresh-info">自动刷新间隔: 5秒</p>
+        </header>
+
+        <div class="system-info">
+            <h2>📊 系统资源</h2>
+            <div class="system-stats" id="systemStats">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+
+        <div class="gpu-section">
+            <h2>🎮 GPU 状态</h2>
+            <div class="gpu-grid" id="gpuGrid">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+
+        <h2 style="color: white; margin-bottom: 15px; text-align: center;">🤖 模型服务</h2>
+        <div class="services-grid" id="servicesGrid">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <div id="logsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="logsTitle">服务日志</h2>
+                <span class="close-btn" onclick="closeLogsModal()">&times;</span>
+            </div>
+            <div class="logs-container" id="logsContent">
+                <div class="loading" style="color: #333;">加载日志中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLogsService = null;
+
+        async function fetchServices() {
+            try {
+                const response = await fetch('/api/services');
+                const services = await response.json();
+                renderServices(services);
+            } catch (error) {
+                console.error('获取服务状态失败:', error);
+            }
+        }
+
+        async function fetchGPU() {
+            try {
+                const response = await fetch('/api/gpu');
+                const gpus = await response.json();
+                renderGPU(gpus);
+            } catch (error) {
+                console.error('获取GPU信息失败:', error);
+            }
+        }
+
+        async function fetchSystemInfo() {
+            try {
+                const response = await fetch('/api/system');
+                const info = await response.json();
+                renderSystemInfo(info);
+            } catch (error) {
+                console.error('获取系统信息失败:', error);
+            }
+        }
+
+        function renderSystemInfo(info) {
+            const statsHtml = `
+                <div class="stat-item">
+                    <div class="stat-label">CPU 使用率</div>
+                    <div class="stat-value">${info.cpu_percent.toFixed(1)}%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">内存使用率</div>
+                    <div class="stat-value">${info.memory_percent.toFixed(1)}%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">内存使用</div>
+                    <div class="stat-value">${info.memory_used_gb.toFixed(1)}GB / ${info.memory_total_gb.toFixed(1)}GB</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">磁盘使用率</div>
+                    <div class="stat-value">${info.disk_percent.toFixed(1)}%</div>
+                </div>
+            `;
+            document.getElementById('systemStats').innerHTML = statsHtml;
+        }
+
+        function renderGPU(gpus) {
+            if (gpus.length === 0) {
+                document.getElementById('gpuGrid').innerHTML = '<div class="loading">无GPU信息</div>';
+                return;
+            }
+
+            const gpuHtml = gpus.map(gpu => `
+                <div class="gpu-card">
+                    <div class="gpu-header">
+                        <div class="gpu-name">GPU ${gpu.index}: ${gpu.name}</div>
+                        <div class="gpu-temp">🌡️ ${gpu.temperature}°C</div>
+                    </div>
+                    <div>
+                        <div style="margin-bottom: 5px;">GPU 利用率</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${gpu.utilization}%">
+                                ${gpu.utilization.toFixed(1)}%
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="margin-bottom: 5px;">显存使用</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${(gpu.memory_used / gpu.memory_total * 100)}%">
+                                ${gpu.memory_used.toFixed(0)}MB / ${gpu.memory_total.toFixed(0)}MB
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gpu-info">
+                        ⚡ 功耗: ${gpu.power_draw.toFixed(1)}W / ${gpu.power_limit.toFixed(1)}W
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('gpuGrid').innerHTML = gpuHtml;
+        }
+
+        function renderServices(services) {
+            const servicesHtml = Object.entries(services).map(([key, service]) => {
+                const isRunning = service.status === 'running';
+                const statusClass = isRunning ? 'status-running' : 'status-stopped';
+                const statusText = isRunning ? '运行中' : '已停止';
+
+                let infoHtml = `
+                    <div><span class="info-label">端口:</span> <span class="info-value">${service.port}</span></div>
+                    <div><span class="info-label">GPU:</span> <span class="info-value">${service.gpus.join(', ')}</span></div>
+                `;
+
+                if (isRunning) {
+                    infoHtml += `
+                        <div><span class="info-label">PID:</span> <span class="info-value">${service.pid}</span></div>
+                        <div><span class="info-label">CPU:</span> <span class="info-value">${service.cpu_percent.toFixed(1)}%</span></div>
+                        <div><span class="info-label">内存:</span> <span class="info-value">${service.memory_mb.toFixed(0)}MB</span></div>
+                        ${service.gpu_memory_mb ? `<div><span class="info-label">GPU显存:</span> <span class="info-value">${service.gpu_memory_mb.toFixed(0)}MB</span></div>` : ''}
+                        <div><span class="info-label">启动时间:</span> <span class="info-value">${service.uptime}</span></div>
+                    `;
+                }
+
+                return `
+                    <div class="service-card">
+                        <div class="service-header">
+                            <div class="service-name">${service.name}</div>
+                            <div class="status-badge ${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="service-info">
+                            ${infoHtml}
+                        </div>
+                        <div class="service-actions">
+                            <button class="btn btn-start" onclick="startService('${key}')" ${isRunning ? 'disabled' : ''}>
+                                启动
+                            </button>
+                            <button class="btn btn-stop" onclick="stopService('${key}')" ${!isRunning ? 'disabled' : ''}>
+                                停止
+                            </button>
+                            <button class="btn btn-logs" onclick="viewLogs('${key}', '${service.name}')">
+                                日志
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('servicesGrid').innerHTML = servicesHtml;
+        }
+
+        async function startService(serviceKey) {
+            if (!confirm('确定要启动此服务吗？')) return;
+
+            try {
+                const response = await fetch(`/api/service/${serviceKey}/start`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('服务启动成功！');
+                    fetchServices();
+                } else {
+                    alert(`启动失败: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`启动失败: ${error.message}`);
+            }
+        }
+
+        async function stopService(serviceKey) {
+            if (!confirm('确定要停止此服务吗？')) return;
+
+            try {
+                const response = await fetch(`/api/service/${serviceKey}/stop`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('服务停止成功！');
+                    fetchServices();
+                } else {
+                    alert(`停止失败: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`停止失败: ${error.message}`);
+            }
+        }
+
+        async function viewLogs(serviceKey, serviceName) {
+            currentLogsService = serviceKey;
+            document.getElementById('logsTitle').textContent = `${serviceName} - 日志`;
+            document.getElementById('logsModal').style.display = 'block';
+            document.getElementById('logsContent').innerHTML = '<div class="loading" style="color: #d4d4d4;">加载日志中...</div>';
+
+            try {
+                const response = await fetch(`/api/service/${serviceKey}/logs?lines=200`);
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('logsContent').textContent = result.logs || '日志为空';
+                } else {
+                    document.getElementById('logsContent').textContent = `加载日志失败: ${result.message}`;
+                }
+            } catch (error) {
+                document.getElementById('logsContent').textContent = `加载日志失败: ${error.message}`;
+            }
+        }
+
+        function closeLogsModal() {
+            document.getElementById('logsModal').style.display = 'none';
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('logsModal');
+            if (event.target === modal) {
+                closeLogsModal();
+            }
+        }
+
+        // 初始化
+        function init() {
+            fetchServices();
+            fetchGPU();
+            fetchSystemInfo();
+
+            // 定时刷新
+            setInterval(() => {
+                fetchServices();
+                fetchGPU();
+                fetchSystemInfo();
+            }, 5000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

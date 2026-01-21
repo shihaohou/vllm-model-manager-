@@ -1,0 +1,38 @@
+{
+    "qwen3": {
+        "name": "Qwen3-Next-80B-A3B-Instruct",
+        "port": 8000,
+        "start_script": "/path/to/scripts/start_qwen3.sh",
+        "stop_script": "/path/to/scripts/stop_qwen3.sh",
+        "log_file": "/path/to/logs/vllm_qwen3.log",
+        "process_pattern": "vllm serve.*Qwen3-Next-80B-A3B-Instruct",
+        "gpus": [1, 2, 3, 4]
+    },
+    "qwen3_thinking": {
+        "name": "Qwen3-Next-80B-A3B-Thinking-FP8",
+        "port": 8001,
+        "start_script": "/path/to/scripts/start_qwen3_thinking.sh",
+        "stop_script": "/path/to/scripts/stop_qwen3_thinking.sh",
+        "log_file": "/path/to/logs/vllm_qwen3_thinking.log",
+        "process_pattern": "vllm serve.*Qwen3-Next-80B-A3B-Thinking",
+        "gpus": [5, 6]
+    },
+    "qwen3_reranker": {
+        "name": "Qwen3-Reranker-8B",
+        "port": 8012,
+        "start_script": "/path/to/scripts/start_qwen3_reranker.sh",
+        "stop_script": "/path/to/scripts/stop_qwen3_reranker.sh",
+        "log_file": "/path/to/logs/vllm_reranker.log",
+        "process_pattern": "vllm serve.*Reranker",
+        "gpus": [0]
+    },
+    "paddleocr": {
+        "name": "PaddleOCR-VL-0.9B",
+        "port": 8080,
+        "start_script": "/path/to/scripts/start_paddleocr_vl.sh",
+        "stop_script": "/path/to/scripts/stop_paddleocr.sh",
+        "log_file": "/path/to/logs/vllm_paddleocr.log",
+        "process_pattern": "vllm serve.*PaddleOCR-VL",
+        "gpus": [0]
+    }
+}
